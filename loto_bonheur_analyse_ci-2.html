@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loto Bonheur Analyse CI</title>
+<style>
+:root{--navy:#071a31;--blue:#0866e8;--green:#07884f;--bg:#f3f7fc;--ink:#122846;--muted:#61738d;--line:#dbe6f2}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:15px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink)}
+header{background:var(--navy);color:white;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.brand{font-weight:800;font-size:20px}.brand small{display:block;color:#9fe2bc;font-weight:500;font-size:12px;margin-top:3px}
+nav{background:#102944;color:#dbeafe;padding:10px 14px;display:flex;gap:8px;overflow:auto}
+nav span{padding:8px 12px;border-radius:8px;white-space:nowrap}nav span:first-child{background:#087a53;color:white}
+main{max-width:1200px;margin:auto;padding:18px}
+.note{background:#fff7df;border:1px solid #f2d68a;color:#6b4c00;padding:12px 14px;border-radius:12px;margin-bottom:15px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card{background:white;border:1px solid var(--line);border-radius:14px;padding:15px;box-shadow:0 2px 6px #1231  }
+.stat{color:var(--muted);font-size:13px}.big{font-size:27px;font-weight:800;margin:4px 0}
+.layout{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-top:14px}.card h2{font-size:17px;margin:0 0 12px}
+label{display:block;font-size:13px;font-weight:700;margin:10px 0 5px}
+input,select,textarea{font:inherit;width:100%;border:1px solid #cdd9e8;border-radius:9px;padding:10px;background:#fff;color:var(--ink)}
+textarea{min-height:145px;resize:vertical}
+button{border:0;border-radius:9px;background:var(--green);color:white;padding:11px 14px;font-weight:750;cursor:pointer;margin-top:10px}
+button.secondary{background:#e8f0fb;color:#123a69}button:active{transform:translateY(1px)}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1;min-width:130px}
+.gridnums{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
+.ball{background:#eaf2fb;border-radius:10px;padding:10px;text-align:center;font-size:19px;font-weight:800}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:8px 6px;border-bottom:1px solid #e4ecf5;text-align:left}th{color:var(--muted);font-weight:700}
+.pill{background:#e2f8ed;color:#087a48;border-radius:99px;padding:3px 8px;font-weight:700}
+.muted{color:var(--muted);font-size:12px;line-height:1.5}.status{margin-top:10px;color:var(--muted);font-size:13px}
+@media(max-width:800px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:1fr}main{padding:12px}.big{font-size:23px}}
+</style>
+</head>
+<body>
+<header><div class="brand">🍀 LOTO BONHEUR CI <small>Analyse • Statistiques • BK inversés</small></div><div>Prototype local · Français</div></header>
+<nav><span>Accueil</span><span>Résultats</span><span>Fréquences</span><span>BK & inversés</span><span>Matrice 10 BK</span></nav>
+<main>
+<div class="note"><b>Important :</b> cette application calcule uniquement à partir des résultats que vous saisissez ou importez. Elle ne prédit pas avec certitude les tirages et n'est pas connectée automatiquement au site LONACI.</div>
+<section class="stats">
+<div class="card"><div class="stat">Tirages enregistrés</div><div class="big" id="drawCount">0</div><div class="muted">Dans vos données</div></div>
+<div class="card"><div class="stat">Numéros gagnants comptés</div><div class="big" id="winCount">0</div><div class="muted">Gagnants uniquement</div></div>
+<div class="card"><div class="stat">Numéros machine comptés</div><div class="big" id="machineCount">0</div><div class="muted">Machine séparément</div></div>
+<div class="card"><div class="stat">BK analysés</div><div class="big">00–90</div><div class="muted">Paires inversées incluses</div></div>
+</section>
+<div class="layout">
+<section class="card">
+<h2>1. Ajouter des résultats</h2>
+<div class="row">
+<div><label for="date">Date</label><input type="date" id="date"></div>
+<div><label for="category">Catégorie / tirage</label><input id="category" placeholder="Ex. Matinale, Clavier"></div>
+</div>
+<label for="winners">Numéros gagnants (séparez par espace, virgule ou tiret)</label>
+<input id="winners" placeholder="Ex. 12 25 38 44 72">
+<label for="machines">Numéros machine (séparez par espace, virgule ou tiret)</label>
+<input id="machines" placeholder="Ex. 03 17 41 62 88">
+<div class="row"><button id="add">Enregistrer le tirage</button><button class="secondary" id="clear">Effacer toutes les données</button></div>
+<div class="status" id="status">Aucune donnée ajoutée. Ajoutez un tirage pour commencer.</div>
+</section>
+<section class="card">
+<h2>2. Importer plusieurs tirages</h2>
+<div class="muted">Une ligne par tirage, format : date;catégorie;gagnants;machine<br>Exemple : 2026-10-28;Matinale;12 25 38 44 72;03 17 41 62 88</div>
+<label for="bulk">Données à importer</label>
+<textarea id="bulk" placeholder="2026-10-28;Matinale;12 25 38 44 72;03 17 41 62 88"></textarea>
+<div class="row"><button id="import">Importer les lignes</button><button class="secondary" id="export">Exporter CSV</button></div>
+<div class="muted">Les données restent dans cette page pendant son utilisation. Exportez un CSV pour conserver une copie.</div>
+</section>
+</div>
+<div class="layout">
+<section class="card"><h2>3. Numéros chauds — Gagnants</h2><div id="hotW"><p class="muted">Ajoutez des résultats pour calculer les fréquences.</p></div></section>
+<section class="card"><h2>4. Numéros chauds — Machine</h2><div id="hotM"><p class="muted">Les fréquences machine seront calculées séparément.</p></div></section>
+</div>
+<div class="layout">
+<section class="card"><h2>5. Matrice de 10 BK</h2><p class="muted">Classement expérimental à partir des fréquences gagnants et machine. Ce classement ne donne aucune garantie de gain.</p><div class="gridnums" id="matrix"><div class="muted">La matrice apparaîtra après saisie.</div></div><button id="copy">Copier la matrice</button></section>
+<section class="card"><h2>6. BK inversés à surveiller</h2><div id="pairs" class="muted">Les paires seront calculées après saisie des données.</div></section>
+</div>
+<div class="card" style="margin-top:14px"><h2>7. Historique des tirages saisis</h2><div id="history" class="muted">Aucun tirage enregistré.</div></div>
+<p class="muted">Limite statistique : les fréquences décrivent le passé. Si le tirage est équitable et indépendant, un numéro peu sorti n'est pas « dû » et un numéro fréquent n'est pas forcément plus probable au prochain tirage. Vérifiez toujours les résultats à la source officielle LONACI.</p>
+</main>
+<script>
+const draws=[];
+const $=id=>document.getElementById(id);
+function parseNums(s){return (s||'').split(/[\s,;|/]+/).map(x=>x.trim()).filter(Boolean).map(x=>parseInt(x,10)).filter(n=>Number.isInteger(n)&&n>=0&&n<=90)}
+function fmt(n){return String(n).padStart(2,'0')}
+function validFive(arr){return arr.length>0 && arr.length<=5}
+function addDraw(date,cat,w,m){if(!date||!cat.trim()||!validFive(w)||!validFive(m))throw new Error('Indiquez la date, la catégorie et entre 1 et 5 numéros pour chaque liste.');draws.push({date,cat:cat.trim(),w:[...w],m:[...m]});render()}
+function freq(key){const c=Array(91).fill(0);let total=0;draws.forEach(d=>d[key].forEach(n=>{c[n]++;total++}));return {c,total}}
+function tableFor(key){const {c,total}=freq(key);const entries=c.map((v,n)=>({n,v,p:total?v/total*100:0})).filter(x=>x.v).sort((a,b)=>b.v-a.v||a.n-b.n).slice(0,10);if(!entries.length)return '<p class="muted">Aucune donnée.</p>';return `<table><thead><tr><th>Rang</th><th>Numéro</th><th>Apparitions</th><th>Part des observations</th></tr></thead><tbody>${entries.map((x,i)=>`<tr><td>${i+1}</td><td><b>${fmt(x.n)}</b></td><td>${x.v}</td><td><span class="pill">${x.p.toFixed(1)}%</span></td></tr>`).join('')}</tbody></table><p class="muted">Dénominateur : ${total} numéros observés.</p>`}
+function render(){
+ const fw=freq('w'),fm=freq('m');
+ $('drawCount').textContent=draws.length;
+ $('winCount').textContent=fw.total;
+ $('machineCount').textContent=fm.total;
+ $('hotW').innerHTML=tableFor('w');$('hotM').innerHTML=tableFor('m');
+ const score=Array.from({length:91},(_,n)=>({n,score:(fw.c[n]/Math.max(1,fw.total))*0.65+(fm.c[n]/Math.max(1,fm.total))*0.35,w:fw.c[n],m:fm.c[n]})).sort((a,b)=>b.score-a.score||b.w-a.w||a.n-b.n);
+ const selected=score.slice(0,10).sort((a,b)=>a.n-b.n);
+ $('matrix').innerHTML=selected.map(x=>`<div class="ball" title="Gagnants ${x.w}, machine ${x.m}">${fmt(x.n)}</div>`).join('');
+ const pairScores=[];for(let n=0;n<=90;n++){let rev=parseInt(String(n).padStart(2,'0').split('').reverse().join(''),10);if(rev<=90&&rev>n){pairScores.push({a:n,b:rev,s:score.find(x=>x.n===n).score+score.find(x=>x.n===rev).score,aw:fw.c[n],bw:fw.c[rev],am:fm.c[n],bm:fm.c[rev]})}}
+ pairScores.sort((a,b)=>b.s-a.s||a.a-b.a);
+ $('pairs').innerHTML=pairScores.slice(0,8).map(p=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)"><b>${fmt(p.a)} – ${fmt(p.b)}</b><span>${p.aw+p.bw} gagn. · ${p.am+p.bm} mach.</span></div>`).join('')||'Ajoutez des résultats.';
+ $('history').innerHTML=draws.length?`<table><thead><tr><th>Date</th><th>Catégorie</th><th>Gagnants</th><th>Machine</th></tr></thead><tbody>${[...draws].reverse().map(d=>`<tr><td>${d.date}</td><td>${esc(d.cat)}</td><td>${d.w.map(fmt).join(' · ')}</td><td>${d.m.map(fmt).join(' · ')}</td></tr>`).join('')}</tbody></table>`:'Aucun tirage enregistré.';
+ $('status').textContent=`${draws.length} tirage(s) enregistré(s). Calculs mis à jour.`;
+}
+function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('add').onclick=()=>{try{addDraw($('date').value,$('category').value,parseNums($('winners').value),parseNums($('machines').value));$('winners').value='';$('machines').value=''}catch(e){alert(e.message)}};
+$('import').onclick=()=>{const lines=$('bulk').value.split(/\n/).map(x=>x.trim()).filter(Boolean);let ok=0,errors=[];lines.forEach((line,i)=>{const p=line.split(';');try{if(p.length<4)throw new Error('format attendu : date;catégorie;gagnants;machine');addDraw(p[0],p[1],parseNums(p[2]),parseNums(p[3]));ok++}catch(e){errors.push(`Ligne ${i+1}: ${e.message}`)}});alert(`${ok} ligne(s) importée(s).${errors.length?'\n'+errors.join('\n'):''}`)};
+$('clear').onclick=()=>{if(confirm('Effacer tous les tirages saisis ?')){draws.length=0;render()}};
+$('export').onclick=()=>{const rows=[['date','categorie','gagnants','machine'],...draws.map(d=>[d.date,d.cat,d.w.map(fmt).join(' '),d.m.map(fmt).join(' ')])];const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='loto_bonheur_ci_historique.csv';a.click();URL.revokeObjectURL(a.href)};
+$('copy').onclick=()=>{const nums=[...$('matrix').querySelectorAll('.ball')].map(x=>x.textContent).join(' - ');if(!nums){alert('Ajoutez des résultats avant de copier.');return}navigator.clipboard?.writeText(nums).then(()=>alert('Matrice copiée : '+nums)).catch(()=>alert('Matrice : '+nums))};
+$('date').value=new Date().toISOString().slice(0,10);
+</script>
+</body></html>
